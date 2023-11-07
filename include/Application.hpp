@@ -13,6 +13,7 @@
 #include "KeyStates.hpp"
 #include "Key.hpp"
 #include "BasicObject.hpp"
+#include "Square.hpp"
 
 #include <GLFW/glfw3.h>
 

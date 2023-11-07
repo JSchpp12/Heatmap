@@ -6,28 +6,42 @@ int Application::disabledLightCounter = int(0);
 bool Application::upCounter = true;
 bool Application::rotatingCounterClock = true;
 
+#include "Grid.hpp"
+
 std::chrono::steady_clock::time_point Application::timeSinceLastUpdate = std::chrono::steady_clock::now();
 
 Application::Application(star::StarScene& scene) : StarApplication(scene)
 {
-    this->camera.setPosition(glm::vec3{ 2.0, 1.0f, 3.0f });
+    this->camera.setPosition(glm::vec3{ 0.0f, 0.3f, 3.0f });
     auto camPosition = this->camera.getPosition();
     this->camera.setLookDirection(-camPosition);
 
-    auto mediaDirectoryPath = StarEngine::GetSetting(star::Config_Settings::mediadirectory);
+    auto mediaDirectoryPath = star::ConfigFile::getSetting(star::Config_Settings::mediadirectory);
+
+    //load plant
     {
-        auto lionPath = StarEngine::GetSetting(star::Config_Settings::mediadirectory) + "models/lion-statue/source/rapid.obj";
+        auto plantPath = mediaDirectoryPath + "models/aloevera/aloevera.obj";
+
+        auto plant = BasicObject::New(plantPath);
+        plant->setPosition(glm::vec3(0.5f, 0.0, 0.0)); 
+        this->scene.add(std::move(plant));
+    }
+
+    //load lion
+    {
+        auto lionPath = mediaDirectoryPath + "models/lion-statue/source/rapid.obj";
         auto materialsPath = mediaDirectoryPath + "models/lion-statue/source";
-        
+
         auto lion = BasicObject::New(lionPath);
         lion->setScale(glm::vec3{ 0.04f, 0.04f, 0.04f });
-        lion->setPosition(glm::vec3{ 0.0, 0.0, 0.0 });
+        lion->setPosition(glm::vec3{-0.5f , 0.0f, 0.0f });
         lion->rotateGlobal(star::Type::Axis::x, -90);
         lion->moveRelative(glm::vec3{ 0.0, -1.0, 0.0 });
-        this->scene.add(std::move(lion)); 
-
-        this->scene.add(std::make_unique<star::Light>(star::Type::Light::directional, glm::vec3{10, 10, 10}));
+        this->scene.add(std::move(lion));
     }
+
+    //this->scene.add(std::make_unique<Grid>(10, 10)); 
+    this->scene.add(std::make_unique<star::Light>(star::Type::Light::directional, glm::vec3{ 10, 10, 10 }));
 
     std::cout << "App Controls" << std::endl;
     std::cout << "Press M to switch lights off and on in order" << std::endl;

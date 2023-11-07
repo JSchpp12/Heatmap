@@ -14,11 +14,11 @@ add_subdirectory("extern/starlight")
 set(${PROJECT_NAME}_SOURCE 
 	"src/main.cpp"
 	"src/Application.cpp"
-	"src/PerlinNoiseComputeRenderer.cpp"
+	"src/SimplexNoiseComputeRenderer.cpp"
 )
 
 set(${PROJECT_NAME}_HEADERS 
-	"include/PerlinNoiseComputeRenderer.hpp"
+	"include/SimplexNoiseComputeRenderer.hpp"
 )
 
 add_executable(${PROJECT_NAME} "${${PROJECT_NAME}_SOURCE};${${PROJECT_NAME}_HEADERS}")
