@@ -10,10 +10,12 @@
 #include "ShaderManager.hpp"
 #include "TextureManager.hpp"
 #include "LightManager.hpp"
+#include "NoiseGrid.hpp"
 #include "KeyStates.hpp"
 #include "Key.hpp"
 #include "BasicObject.hpp"
 #include "Square.hpp"
+#include "SimplexNoiseComputeRenderer.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -35,13 +37,16 @@ public:
 
     void Update();
 
-    virtual std::string getApplicationName() { return "Starlight Application"; }
+    virtual std::string getApplicationName() { return "Compute Displacement Grid"; }
 
     void onKeyPress(int key, int scancode, int mods) override;
+
+    std::unique_ptr<star::SwapChainRenderer> getMainRenderer(star::StarDevice& device, star::StarWindow& window, star::RenderOptions& options) override; 
 
 protected:
 
 private:
+    const int gridBaseHeight = 100, gridBaseWidth = 100;
     const int sunSpeed = 50;
     const float spotSpeed = 2;
     double scaleAmt = 0.1;
