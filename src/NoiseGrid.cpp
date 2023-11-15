@@ -47,17 +47,18 @@ void NoiseGrid::createComputeDependencies(star::StarDevice& device)
 	pushConstant.size = sizeof(ComputeInfo); 
 	pushConstant.stageFlags = vk::ShaderStageFlagBits::eCompute; 
 
+	// auto descriptorBuilder = star::
+
 	//compute pipe needs to know what kind of descriptors it will be recieving
-	vk::PipelineLayoutCreateInfo compLayoutInfo{}; 
-	compLayoutInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo; 
-	compLayoutInfo.pSetLayouts = &descriptorSetLayout->getDescriptorSetLayout(); 
-	compLayoutInfo.pPushConstantRanges = &pushConstant; 
-	compLayoutInfo.pushConstantRangeCount = 1; 
+	// vk::PipelineLayoutCreateInfo compLayoutInfo{}; 
+	// compLayoutInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo; 
+	// compLayoutInfo.pSetLayouts = &
+	// compLayoutInfo.pPushConstantRanges = &pushConstant; 
+	// compLayoutInfo.pushConstantRangeCount = 1; 
 
-	this->compPipeLayout = device.getDevice().createPipelineLayout(compLayoutInfo);
+	// this->compPipeLayout = device.getDevice().createPipelineLayout(compLayoutInfo);
 
-	auto map = star::ConfigFile::
-	//create pipeline
-	this->computePipe = std::make_unique<star::StarComputePipeline>(device, this->compPipeLayout, ); 
-
+	// auto map = star::ConfigFile::
+	// //create pipeline
+	// this->computePipe = std::make_unique<star::StarComputePipeline>(device, this->compPipeLayout, ); 
 }
