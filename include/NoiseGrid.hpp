@@ -19,7 +19,7 @@ public:
 
 	static std::unique_ptr<NoiseGrid> New(int vertX, int vertY); 
 
-	virtual void prepDraw(); 
+	// virtual void prepDraw(int swapChainTarget); 
 
 	/// @brief Cleanup the needed structures for this object. In this case it is the compute pipeline dependencies that need deleted.
 	/// @param device star device which owns these objects
@@ -30,7 +30,7 @@ public:
 	/// </summary>
 	/// <param name="device"></param>
 	virtual void prepRender(star::StarDevice& device, vk::Extent2D swapChainExtent,
-		vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, int numSwapChainImages, star::StarDescriptorSetLayout& groupLayout,
+		vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, int numFramesInFlight, star::StarDescriptorSetLayout& groupLayout,
 		star::StarDescriptorPool& groupPool, std::vector<std::vector<vk::DescriptorSet>> globalSets) override; 
 	
 	/// <summary>
@@ -42,9 +42,10 @@ public:
 	/// <param name="groupPool"></param>
 	/// <param name="globalSets"></param>
 	/// <param name="sharedPipeline"></param>
-	virtual void prepRender(star::StarDevice& device, int numSwapChainImages, star::StarDescriptorSetLayout& groupLayout,
+	virtual void prepRender(star::StarDevice& device, int numFramesInFlight, star::StarDescriptorSetLayout& groupLayout,
 		star::StarDescriptorPool& groupPool, std::vector<std::vector<vk::DescriptorSet>> globalSets, star::StarPipeline& sharedPipeline) override; 
 
+	virtual void recordCommands(star::StarCommandBuffer& commandBuffer, vk::PipelineLayout& pipelineLayout, int swapChainIndexNum, uint32_t vb_start, uint32_t ib_start) override; 
 protected:
 	//know grid will only have 1 mesh....so only need 1 texture
 	std::shared_ptr<star::Texture> displacementTexture; 
@@ -52,6 +53,7 @@ protected:
 	vk::PipelineLayout compPipeLayout; 
 	std::unique_ptr<star::StarComputePipeline> compPipe; 
 	std::unique_ptr<star::StarCommandBuffer> commandBuffer; 
+	star::StarCommandBuffer* mainDrawCommands = nullptr; 
 
 	int swapChainImages = 0;
 

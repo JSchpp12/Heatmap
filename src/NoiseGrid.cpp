@@ -13,10 +13,12 @@ std::unique_ptr<NoiseGrid> NoiseGrid::New(int vertX, int vertY)
 	return std::unique_ptr<NoiseGrid>(new NoiseGrid(vertX, vertY, material));
 }
 
-void NoiseGrid::prepDraw()
-{
+// void NoiseGrid::prepDraw()
+// {
+// 	this->mainDrawCommands->waitFor(this->commandBuffer->getCompleteSemaphores(), vk::PipelineStageFlagBits::eVertexShader); 
 
-}
+// 	this->commandBuffer->submit(swapChainTarget); 
+// }
 
 void NoiseGrid::cleanupRender(star::StarDevice& device){
 	this->star::Grid::cleanupRender(device); 
@@ -45,6 +47,12 @@ void NoiseGrid::prepRender(star::StarDevice& device, int numSwapChainImages,
 	createComputeDependencies(device); 
 }
 
+void NoiseGrid::recordCommands(star::StarCommandBuffer &commandBuffer, vk::PipelineLayout &pipelineLayout, int swapChainIndexNum, uint32_t vb_start, uint32_t ib_start)
+{
+	this->star::StarObject::recordCommands(commandBuffer, pipelineLayout, swapChainIndexNum, vb_start, ib_start); 
+
+	this->mainDrawCommands = &commandBuffer; 
+}
 
 NoiseGrid::NoiseGrid(int vertX, int vertY, std::shared_ptr<star::TextureMaterial> textureMaterial)
 	: Grid(vertX, vertY, textureMaterial){ }
@@ -84,6 +92,5 @@ void NoiseGrid::createComputeDependencies(star::StarDevice& device)
 		this->compPipe->bind(buffer);
 		
 		buffer.end(); 
-		this->commandBuffer->submit(i);  
 	}
 }
