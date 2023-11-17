@@ -1,6 +1,8 @@
 #include "NoiseGrid.hpp"
 
 
+NoiseGrid::~NoiseGrid(){}
+
 std::unique_ptr<NoiseGrid> NoiseGrid::New(int vertX, int vertY)
 {
 	auto settings = star::StarTexture::TextureCreateSettings(
@@ -10,6 +12,13 @@ std::unique_ptr<NoiseGrid> NoiseGrid::New(int vertX, int vertY)
 	auto texture = std::shared_ptr<star::Texture>(new star::Texture(vertX, vertY, settings));
 	auto material = std::shared_ptr<star::TextureMaterial>(new star::TextureMaterial(texture)); 
 	return std::unique_ptr<NoiseGrid>(new NoiseGrid(vertX, vertY, material));
+}
+
+void NoiseGrid::cleanupRender(star::StarDevice& device){
+	this->star::Grid::cleanupRender(device); 
+
+	device.getDevice().destroyPipelineLayout(this->compPipeLayout); 
+	this->computePipe.release(); 
 }
 
 void NoiseGrid::prepRender(star::StarDevice& device, vk::Extent2D swapChainExtent,
@@ -47,18 +56,17 @@ void NoiseGrid::createComputeDependencies(star::StarDevice& device)
 	pushConstant.size = sizeof(ComputeInfo); 
 	pushConstant.stageFlags = vk::ShaderStageFlagBits::eCompute; 
 
-	// auto descriptorBuilder = star::
+	auto setLayout = descriptorSetLayout->getDescriptorSetLayout();
+	// compute pipe needs to know what kind of descriptors it will be recieving
+	vk::PipelineLayoutCreateInfo compLayoutInfo{}; 
+	compLayoutInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo; 
+	compLayoutInfo.pSetLayouts = &setLayout;
+	compLayoutInfo.pPushConstantRanges = &pushConstant; 
+	compLayoutInfo.pushConstantRangeCount = 1; 
 
-	//compute pipe needs to know what kind of descriptors it will be recieving
-	// vk::PipelineLayoutCreateInfo compLayoutInfo{}; 
-	// compLayoutInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo; 
-	// compLayoutInfo.pSetLayouts = &
-	// compLayoutInfo.pPushConstantRanges = &pushConstant; 
-	// compLayoutInfo.pushConstantRangeCount = 1; 
+	this->compPipeLayout = device.getDevice().createPipelineLayout(compLayoutInfo);
 
-	// this->compPipeLayout = device.getDevice().createPipelineLayout(compLayoutInfo);
-
-	// auto map = star::ConfigFile::
-	// //create pipeline
-	// this->computePipe = std::make_unique<star::StarComputePipeline>(device, this->compPipeLayout, ); 
+	auto compPath = star::ConfigFile::getSetting(star::Config_Settings::mediadirectory) + "/shaders/noise.comp"; 
+	//create pipeline
+	this->computePipe = std::make_unique<star::StarComputePipeline>(device, this->compPipeLayout, star::StarShader(compPath, star::Shader_Stage::compute)); 
 }

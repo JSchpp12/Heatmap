@@ -14,7 +14,11 @@ public:
 		uint32_t deltaTime; 
 	}; 
 
+	virtual ~NoiseGrid(); 
+
 	static std::unique_ptr<NoiseGrid> New(int vertX, int vertY); 
+
+	virtual void cleanupRender(star::StarDevice& device) override; 
 
 	/// <summary>
 	/// Prepare needed objects for rendering operations.
