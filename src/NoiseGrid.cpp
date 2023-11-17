@@ -1,6 +1,5 @@
 #include "NoiseGrid.hpp"
 
-
 NoiseGrid::~NoiseGrid(){}
 
 std::unique_ptr<NoiseGrid> NoiseGrid::New(int vertX, int vertY)
@@ -14,11 +13,16 @@ std::unique_ptr<NoiseGrid> NoiseGrid::New(int vertX, int vertY)
 	return std::unique_ptr<NoiseGrid>(new NoiseGrid(vertX, vertY, material));
 }
 
+void NoiseGrid::prepDraw()
+{
+
+}
+
 void NoiseGrid::cleanupRender(star::StarDevice& device){
 	this->star::Grid::cleanupRender(device); 
 
 	device.getDevice().destroyPipelineLayout(this->compPipeLayout); 
-	this->computePipe.release(); 
+	this->compPipe.release(); 
 }
 
 void NoiseGrid::prepRender(star::StarDevice& device, vk::Extent2D swapChainExtent,
@@ -27,6 +31,7 @@ void NoiseGrid::prepRender(star::StarDevice& device, vk::Extent2D swapChainExten
 {
 	this->star::Grid::prepRender(device, swapChainExtent, pipelineLayout, renderPass, numSwapChainImages, groupLayout, groupPool, globalSets); 
 
+	this->swapChainImages = numSwapChainImages; 
 	//this will also create a compute pipeline
 	createComputeDependencies(device); 
 }
@@ -35,7 +40,8 @@ void NoiseGrid::prepRender(star::StarDevice& device, int numSwapChainImages,
 	star::StarDescriptorSetLayout& groupLayout, star::StarDescriptorPool& groupPool, std::vector<std::vector<vk::DescriptorSet>> globalSets, star::StarPipeline& sharedPipeline)
 {
 	this->star::Grid::prepRender(device, numSwapChainImages, groupLayout, groupPool, globalSets, sharedPipeline);
-
+	
+	this->swapChainImages = numSwapChainImages; 
 	createComputeDependencies(device); 
 }
 
@@ -68,5 +74,16 @@ void NoiseGrid::createComputeDependencies(star::StarDevice& device)
 
 	auto compPath = star::ConfigFile::getSetting(star::Config_Settings::mediadirectory) + "/shaders/noise.comp"; 
 	//create pipeline
-	this->computePipe = std::make_unique<star::StarComputePipeline>(device, this->compPipeLayout, star::StarShader(compPath, star::Shader_Stage::compute)); 
+	this->compPipe = std::make_unique<star::StarComputePipeline>(device, this->compPipeLayout, star::StarShader(compPath, star::Shader_Stage::compute)); 
+
+	//record command buffer
+	this->commandBuffer = std::make_unique<star::StarCommandBuffer>(device, this->swapChainImages, star::Command_Buffer_Type::Tcompute); 
+	for (int i = 0; i < this->swapChainImages; i++){
+		this->commandBuffer->begin(i); 
+		vk::CommandBuffer buffer = this->commandBuffer->buffer(i);
+		this->compPipe->bind(buffer);
+		
+		buffer.end(); 
+		this->commandBuffer->submit(i);  
+	}
 }

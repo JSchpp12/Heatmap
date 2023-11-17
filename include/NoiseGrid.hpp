@@ -4,6 +4,7 @@
 #include "TextureMaterial.hpp"
 #include "StarComputePipeline.hpp"
 #include "StarDescriptors.hpp"
+#include "StarCommandBuffer.hpp"
 #include "ConfigFile.hpp"
 
 #include <memory>
@@ -18,6 +19,10 @@ public:
 
 	static std::unique_ptr<NoiseGrid> New(int vertX, int vertY); 
 
+	virtual void prepDraw(); 
+
+	/// @brief Cleanup the needed structures for this object. In this case it is the compute pipeline dependencies that need deleted.
+	/// @param device star device which owns these objects
 	virtual void cleanupRender(star::StarDevice& device) override; 
 
 	/// <summary>
@@ -45,7 +50,10 @@ protected:
 	std::shared_ptr<star::Texture> displacementTexture; 
 	std::shared_ptr<star::TextureMaterial> textureMaterial; 
 	vk::PipelineLayout compPipeLayout; 
-	std::unique_ptr<star::StarComputePipeline> computePipe; 
+	std::unique_ptr<star::StarComputePipeline> compPipe; 
+	std::unique_ptr<star::StarCommandBuffer> commandBuffer; 
+
+	int swapChainImages = 0;
 
 	NoiseGrid(int vertX, int vertY, std::shared_ptr<star::TextureMaterial> textureMaterial);
 
