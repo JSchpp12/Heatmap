@@ -8,6 +8,7 @@
 #include "ConfigFile.hpp"
 
 #include <memory>
+#include <vector>
 
 class NoiseGrid : public star::Grid {
 public:
@@ -17,9 +18,11 @@ public:
 
 	virtual ~NoiseGrid(); 
 
-	static std::unique_ptr<NoiseGrid> New(int vertX, int vertY); 
+	static std::unique_ptr<NoiseGrid> New(int sizeScale);
 
-	// virtual void prepDraw(int swapChainTarget); 
+	virtual void initRender(int numFramesInFlight) override;
+
+	 virtual void prepDraw(int frameInFlightIndex);
 
 	/// @brief Cleanup the needed structures for this object. In this case it is the compute pipeline dependencies that need deleted.
 	/// @param device star device which owns these objects
@@ -45,19 +48,28 @@ public:
 	virtual void prepRender(star::StarDevice& device, int numFramesInFlight, star::StarDescriptorSetLayout& groupLayout,
 		star::StarDescriptorPool& groupPool, std::vector<std::vector<vk::DescriptorSet>> globalSets, star::StarPipeline& sharedPipeline) override; 
 
-	virtual void recordCommands(star::StarCommandBuffer& commandBuffer, vk::PipelineLayout& pipelineLayout, int swapChainIndexNum, uint32_t vb_start, uint32_t ib_start) override; 
+	virtual void recordPreRenderPassCommands(star::StarCommandBuffer& commandBuffer, int swapChainIndexNum) override; 
+
+	virtual void recordRenderPassCommands(star::StarCommandBuffer& commandBuffer, vk::PipelineLayout& pipelineLayout, int swapChainIndexNum, uint32_t vb_start, uint32_t ib_start) override; 
 protected:
 	//know grid will only have 1 mesh....so only need 1 texture
 	std::shared_ptr<star::Texture> displacementTexture; 
-	std::shared_ptr<star::TextureMaterial> textureMaterial; 
 	vk::PipelineLayout compPipeLayout; 
 	std::unique_ptr<star::StarComputePipeline> compPipe; 
-	std::unique_ptr<star::StarCommandBuffer> commandBuffer; 
+	std::unique_ptr<star::StarCommandBuffer> commandBuffer;
+	std::vector<vk::DescriptorSet> descriptorSets;
 	star::StarCommandBuffer* mainDrawCommands = nullptr; 
+	bool toldMainRenderToWait = false; 
+
+	star::StarDevice* tmp = nullptr; 
 
 	int swapChainImages = 0;
 
-	NoiseGrid(int vertX, int vertY, std::shared_ptr<star::TextureMaterial> textureMaterial);
+	NoiseGrid(int vertX, int vertY, std::shared_ptr<star::Texture> texture, std::shared_ptr<star::TextureMaterial> textureMaterial);
 
 	void createComputeDependencies(star::StarDevice& device); 
+
+	virtual std::unordered_map<star::Shader_Stage, star::StarShader> getShaders() override;
+
+	void prepareCompImageForMain(star::StarCommandBuffer& commandBuffer, int imageInFlight); 
 };
