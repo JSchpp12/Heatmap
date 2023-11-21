@@ -1,15 +1,47 @@
 #version 450
+//written by Jacob Schaupp
+//based on work presented in Simplex Noise Demystified (SND)
+//additionally based on thebookofshaders - simplex noise
+//by Stefan Gustavson
 
 layout (binding = 0, rgba8) uniform writeonly image2D outputImage;
 
 layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
+
+//precomputed values for skeded triangular grid
+const vec4 triangleGridValues = vec4(0.211324865405187,
+                        // (3.0-sqrt(3.0))/6.0
+                        0.366025403784439,
+                        // 0.5*(sqrt(3.0)-1.0)
+                        -0.577350269189626,
+                        // -1.0 + 2.0 * C.x
+                        0.024390243902439); 
+                        // 1.0 / 41.0
+
 // layout (push_constant) uniform constants{
 //     float tmp
 // } PushConstants; 
 
+// calculate simplex noise at a given location
+float simplexNoise(in vec2 loc) {
+    //need to find corners of simplex grid
+
+    //first corner 
+    vec2 li = floor(loc + dot(loc, triangleGridValues.yy)); 
+    vec2 corner_0 = loc - li + dot(li, triangleGridValues.xx);
+    //can use conditional rather than lookup table as presented in SND
+    vec2 lii = (corner_0.x > corner_0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0); 
+    vec2 corner_1 = corner_0.xy + triangleGridValues.xx - li; 
+    vec2 corner_2 = corner_0.xy + triangleGridValues.zz; 
+
+    li = mod()
+    return 1.0; 
+}
+
 void main(){
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy); 
+    float color = simplexNoise(texelCoord);
 
-    imageStore(outputImage, texelCoord, vec4(1.0, 0.0, 0.0, 1.0));
+    imageStore(outputImage, texelCoord, vec4(color, 0.0, 0.0, 1.0));
 }

@@ -40,7 +40,7 @@ Application::Application(star::StarScene& scene) : StarApplication(scene)
     //    this->scene.add(std::move(lion));
     //}
 
-    this->scene.add(NoiseGrid::New(1)); 
+    this->scene.add(NoiseGrid::New(4)); 
     
     this->scene.add(std::unique_ptr<star::Light>(new Light(star::Type::Light::directional, glm::vec3{ 10,10,10 })));
 }
