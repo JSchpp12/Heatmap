@@ -26,12 +26,21 @@ void NoiseGrid::initRender(int numFramesInFlight)
 
  void NoiseGrid::prepDraw(int frameInFlightIndex)
  {
- 	this->commandBuffer->submit(frameInFlightIndex);
+	 this->commandBuffer->reset(frameInFlightIndex); 
+
+	 recordComputeCommands(*this->commandBuffer, frameInFlightIndex);
+
+	 //call for compute
+	 this->commandBuffer->submit(frameInFlightIndex);
+
+	 //flip noiseCompValues for next draw if needed
+	 int nextIndex = frameInFlightIndex + 1 % this->swapChainImages; 
+	 this->noiseComputeValues = &this->compInfos.at(nextIndex);
  }
 
 void NoiseGrid::cleanupRender(star::StarDevice& device){
 	this->star::Grid::cleanupRender(device); 
-
+	this->descriptorLayout.reset(); 
 	this->commandBuffer.reset(); 
 	device.getDevice().destroyPipelineLayout(this->compPipeLayout); 
 	this->compPipe.reset(); 
@@ -43,8 +52,9 @@ void NoiseGrid::prepRender(star::StarDevice& device, vk::Extent2D swapChainExten
 {
 	this->star::Grid::prepRender(device, swapChainExtent, pipelineLayout, renderPass, numSwapChainImages, groupLayout, groupPool, globalSets); 
 	this->swapChainImages = numSwapChainImages; 
+	this->device = &device; 
 	//this will also create a compute pipeline
-	createComputeDependencies(device); 
+	createComputeDependencies(); 
 }
 
 void NoiseGrid::prepRender(star::StarDevice& device, int numSwapChainImages, 
@@ -52,7 +62,8 @@ void NoiseGrid::prepRender(star::StarDevice& device, int numSwapChainImages,
 {
 	this->star::Grid::prepRender(device, numSwapChainImages, groupLayout, groupPool, globalSets, sharedPipeline);
 	this->swapChainImages = numSwapChainImages; 
-	createComputeDependencies(device); 
+	this->device = &device;
+	createComputeDependencies(); 
 }
 
 void NoiseGrid::recordPreRenderPassCommands(star::StarCommandBuffer& commandBuffer, int swapChainIndexNum)
@@ -96,14 +107,15 @@ void NoiseGrid::recordRenderPassCommands(star::StarCommandBuffer &commandBuffer,
 NoiseGrid::NoiseGrid(int vertX, int vertY, std::shared_ptr<star::Texture> texture, std::shared_ptr<star::TextureMaterial> textureMaterial)
 	: Grid(vertX, vertY, textureMaterial), displacementTexture(texture) { }
 
-void NoiseGrid::createComputeDependencies(star::StarDevice& device)
+void NoiseGrid::createComputeDependencies()
 {
-	auto workGrpSquare = this->star::Grid::getSizeX() / 32; 
+	this->compInfos.resize(this->swapChainImages); 
+	this->noiseComputeValues = &this->compInfos.at(0); 
 
-	this->commandBuffer = std::make_unique<star::StarCommandBuffer>(device, this->swapChainImages, star::Command_Buffer_Type::Tcompute); 
+	this->commandBuffer = std::make_unique<star::StarCommandBuffer>(*this->device, this->swapChainImages, star::Command_Buffer_Type::Tcompute); 
 
 	//create compute pipeline layout
-	auto descriptorSetLayout = star::StarDescriptorSetLayout::Builder(device)
+	this->descriptorLayout = star::StarDescriptorSetLayout::Builder(*this->device)
 		.addBinding(0, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eCompute)
 		.build(); 
 	
@@ -113,7 +125,7 @@ void NoiseGrid::createComputeDependencies(star::StarDevice& device)
 	pushConstant.size = sizeof(ComputeInfo); 
 	pushConstant.stageFlags = vk::ShaderStageFlagBits::eCompute; 
 
-	auto setLayout = descriptorSetLayout->getDescriptorSetLayout();
+	auto setLayout = this->descriptorLayout->getDescriptorSetLayout();
 	// compute pipe needs to know what kind of descriptors it will be recieving
 	vk::PipelineLayoutCreateInfo compLayoutInfo{}; 
 	compLayoutInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo; 
@@ -122,66 +134,29 @@ void NoiseGrid::createComputeDependencies(star::StarDevice& device)
 	compLayoutInfo.pPushConstantRanges = &pushConstant; 
 	compLayoutInfo.pushConstantRangeCount = 1; 
 
-	this->compPipeLayout = device.getDevice().createPipelineLayout(compLayoutInfo);
+	this->compPipeLayout = this->device->getDevice().createPipelineLayout(compLayoutInfo);
 
 	auto compPath = star::ConfigFile::getSetting(star::Config_Settings::mediadirectory) + "/shaders/noise.comp"; 
 	//create pipeline
-	this->compPipe = std::make_unique<star::StarComputePipeline>(device, this->compPipeLayout, star::StarShader(compPath, star::Shader_Stage::compute)); 
+	this->compPipe = std::make_unique<star::StarComputePipeline>(*this->device, this->compPipeLayout, star::StarShader(compPath, star::Shader_Stage::compute)); 
 	this->compPipe->init(); 
 
 	//record command buffer
 	for (int i = 0; i < this->swapChainImages; i++){
-		this->commandBuffer->begin(i); 
-		vk::CommandBuffer buffer = this->commandBuffer->buffer(i);
-		this->compPipe->bind(buffer);
-
-		//prepare image for compute shader
-		{
-			vk::ImageMemoryBarrier barrier{};
-			barrier.sType = vk::StructureType::eImageMemoryBarrier;
-			barrier.oldLayout = vk::ImageLayout::eUndefined;
-			barrier.newLayout = vk::ImageLayout::eGeneral;
-			barrier.srcAccessMask = vk::AccessFlagBits::eNone;
-			barrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
-			barrier.image = this->displacementTexture->getImage();
-			barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-			barrier.subresourceRange.baseMipLevel = 0;                          //image does not have any mipmap levels
-			barrier.subresourceRange.levelCount = 1;                            //image is not an array
-			barrier.subresourceRange.baseArrayLayer = 0;
-			barrier.subresourceRange.layerCount = 1;
-
-			buffer.pipelineBarrier(
-				vk::PipelineStageFlagBits::eTopOfPipe,
-				vk::PipelineStageFlagBits::eComputeShader,
-				{},
-				{},
-				nullptr,
-				barrier
-			);
-		}
-
-		auto format = vk::Format::eR8G8B8A8Snorm;
 		auto texInfo = vk::DescriptorImageInfo{
 			VK_NULL_HANDLE,
-			this->displacementTexture->getImageView(), 
+			this->displacementTexture->getImageView(),
 			vk::ImageLayout::eGeneral
 		};
 
-		//bind image
 		vk::DescriptorSet set;
-
-		auto builder = star::StarDescriptorWriter(device, *descriptorSetLayout, star::ManagerDescriptorPool::getPool())
+		//bind image
+		auto builder = star::StarDescriptorWriter(*this->device, *this->descriptorLayout, star::ManagerDescriptorPool::getPool())
 			.writeImage(0, texInfo)
 			.build(set);
 		this->descriptorSets.push_back(set);
 
-		auto sets = std::vector{ this->descriptorSets.at(i) };
-
-		buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, this->compPipeLayout, 0, sets.size(), sets.data(), 0, nullptr);
-
-		buffer.dispatch(workGrpSquare, workGrpSquare, 1);
-
-		buffer.end(); 
+		recordComputeCommands(*this->commandBuffer, i); 
 	}
 }
 
@@ -209,4 +184,48 @@ void NoiseGrid::prepareCompImageForMain(star::StarCommandBuffer& commandBuffer, 
 			vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eShaderRead, 
 			vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexShader); 
 	}
+}
+
+void NoiseGrid::recordComputeCommands(star::StarCommandBuffer& commandBuffer, int imageInFlight)
+{
+	auto workGrpSquare = this->star::Grid::getSizeX() / 32;
+
+	this->commandBuffer->begin(imageInFlight);
+	vk::CommandBuffer buffer = this->commandBuffer->buffer(imageInFlight);
+	this->compPipe->bind(buffer);
+
+	//prepare image for compute shader
+	{
+		vk::ImageMemoryBarrier barrier{};
+		barrier.sType = vk::StructureType::eImageMemoryBarrier;
+		barrier.oldLayout = vk::ImageLayout::eUndefined;
+		barrier.newLayout = vk::ImageLayout::eGeneral;
+		barrier.srcAccessMask = vk::AccessFlagBits::eNone;
+		barrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
+		barrier.image = this->displacementTexture->getImage();
+		barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		barrier.subresourceRange.baseMipLevel = 0;                          //image does not have any mipmap levels
+		barrier.subresourceRange.levelCount = 1;                            //image is not an array
+		barrier.subresourceRange.baseArrayLayer = 0;
+		barrier.subresourceRange.layerCount = 1;
+
+		buffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::PipelineStageFlagBits::eComputeShader,
+			{},
+			{},
+			nullptr,
+			barrier
+		);
+	}
+
+	buffer.pushConstants(compPipeLayout, vk::ShaderStageFlagBits::eCompute, 0, sizeof(ComputeInfo), &compInfos.at(imageInFlight));
+
+	auto sets = std::vector{ this->descriptorSets.at(imageInFlight) };
+
+	buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, this->compPipeLayout, 0, sets.size(), sets.data(), 0, nullptr);
+
+	buffer.dispatch(workGrpSquare, workGrpSquare, 1);
+
+	buffer.end();
 }

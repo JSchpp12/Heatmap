@@ -13,8 +13,10 @@
 class NoiseGrid : public star::Grid {
 public:
 	struct ComputeInfo {
-		uint32_t deltaTime; 
+		glm::vec2 noiseImageResolution = glm::vec2(320, 320); 
 	}; 
+
+	ComputeInfo* noiseComputeValues = nullptr; 
 
 	virtual ~NoiseGrid(); 
 
@@ -54,6 +56,7 @@ public:
 protected:
 	//know grid will only have 1 mesh....so only need 1 texture
 	std::shared_ptr<star::Texture> displacementTexture; 
+	std::unique_ptr<star::StarDescriptorSetLayout> descriptorLayout; 
 	vk::PipelineLayout compPipeLayout; 
 	std::unique_ptr<star::StarComputePipeline> compPipe; 
 	std::unique_ptr<star::StarCommandBuffer> commandBuffer;
@@ -61,15 +64,19 @@ protected:
 	star::StarCommandBuffer* mainDrawCommands = nullptr; 
 	bool toldMainRenderToWait = false; 
 
-	star::StarDevice* tmp = nullptr; 
+	star::StarDevice* device = nullptr; 
+
+	std::vector<ComputeInfo> compInfos; 
 
 	int swapChainImages = 0;
 
 	NoiseGrid(int vertX, int vertY, std::shared_ptr<star::Texture> texture, std::shared_ptr<star::TextureMaterial> textureMaterial);
 
-	void createComputeDependencies(star::StarDevice& device); 
+	void createComputeDependencies(); 
 
 	virtual std::unordered_map<star::Shader_Stage, star::StarShader> getShaders() override;
 
 	void prepareCompImageForMain(star::StarCommandBuffer& commandBuffer, int imageInFlight); 
+
+	void recordComputeCommands(star::StarCommandBuffer& commandBuffer, int imageInFlight); 
 };

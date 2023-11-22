@@ -35,8 +35,6 @@ public:
 
     void Load();
 
-    void Update();
-
     virtual std::string getApplicationName() { return "Compute Displacement Grid"; }
 
     void onKeyPress(int key, int scancode, int mods) override;
@@ -53,6 +51,11 @@ private:
 
     star::Light* sun = nullptr;
     star::Light* spot = nullptr;
+
+    NoiseGrid* grid = nullptr; 
+
+    bool targetX = false; 
+    bool targetY = false; 
 
 
     static int disabledLightCounter;

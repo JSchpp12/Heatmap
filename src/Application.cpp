@@ -40,18 +40,14 @@ Application::Application(star::StarScene& scene) : StarApplication(scene)
     //    this->scene.add(std::move(lion));
     //}
 
-    this->scene.add(NoiseGrid::New(4)); 
+    auto gridRef = this->scene.add(NoiseGrid::New(10)); 
+    this->grid = static_cast<NoiseGrid*>(&this->scene.getObject(gridRef)); 
     
     this->scene.add(std::unique_ptr<star::Light>(new Light(star::Type::Light::directional, glm::vec3{ 10,10,10 })));
 }
 
 void Application::Load()
 {
-}
-
-void Application::Update()
-{
-
 }
 
 void Application::onKeyPress(int key, int scancode, int mods)
@@ -90,4 +86,37 @@ void Application::onScroll(double xoffset, double yoffset)
 
 void Application::onWorldUpdate()
 {
+    int valueChange = 0;
+
+    if (star::KeyStates::state(star::KEY::X)) {
+        std::cout << "Updating X of noise function resolution" << std::endl;
+        this->targetX = true;
+        this->targetY = false;
+    }
+    else if (star::KeyStates::state(star::KEY::Y)) {
+        std::cout << "Updating Y of noise function resolution" << std::endl;
+        this->targetX = false;
+        this->targetY = true;
+    }
+
+    if (star::KeyStates::state(star::KEY::UP)) {
+        valueChange = 1;
+    }
+    else if (star::KeyStates::state(star::KEY::DOWN)) {
+        valueChange = -1;
+    }
+
+    if (this->targetX) {
+        if (valueChange != 0)
+            std::cout << this->grid->noiseComputeValues->noiseImageResolution.x << std::endl;
+
+        this->grid->noiseComputeValues->noiseImageResolution.x += valueChange;
+ 
+    }
+    else if (this->targetY) {
+        if (valueChange != 0)
+            std::cout << this->grid->noiseComputeValues->noiseImageResolution.y << std::endl;
+
+        this->grid->noiseComputeValues->noiseImageResolution.y += valueChange;
+    }
 }
