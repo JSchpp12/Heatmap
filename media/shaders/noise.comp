@@ -17,20 +17,24 @@ const vec4 triangleGridValues = vec4(0.211324865405187,
                         // -1.0 + 2.0 * C.x
                         0.024390243902439); 
                         // 1.0 / 41.0
-const float in_permuteValue = 32; 
+const float in_modValue = 289; 
 
 layout (push_constant) uniform constants{
     vec2 res;
+    float scale; 
+    float permute; 
 } PushConstants; 
 
 vec3 permute(vec3 inValue, float permuteValue){
-    return mod(((inValue*permuteValue)+1)*inValue, 255);
+    return mod(((inValue*permuteValue)+1)*inValue, in_modValue);
 }
 
 // calculate simplex noise at a given location
 float simplexNoise(in vec2 compLoc) {
     //need to find corners of simplex grid
-    vec2 loc = compLoc.xy / PushConstants.res.xy; 
+    vec2 loc = compLoc.xy / PushConstants.res.xy;  
+    loc.x *= PushConstants.res.x / PushConstants.res.y; 
+    loc *=  PushConstants.scale; 
 
     //first corner 
     vec2 li = floor(loc + dot(loc, triangleGridValues.yy)); 
@@ -40,9 +44,9 @@ float simplexNoise(in vec2 compLoc) {
     vec2 corner_1 = corner_0.xy + triangleGridValues.xx - lii; 
     vec2 corner_2 = corner_0.xy + triangleGridValues.zz; 
 
-    li = mod(li, 255); 
+    li = mod(li, in_modValue); 
     vec3 permute_result = permute(permute(li.y + vec3(0.0, lii.y, 1.0)
-        + li.x + vec3(0.0, lii.x, 1.0), in_permuteValue), in_permuteValue); 
+        + li.x + vec3(0.0, lii.x, 1.0), PushConstants.permute), PushConstants.permute); 
 
     vec3 m = max(0.5 - vec3(
         dot(corner_0, corner_0), 
@@ -51,12 +55,11 @@ float simplexNoise(in vec2 compLoc) {
     ), 0.0); 
 
     m = m*m; 
-    m + m*m; 
+    m = m*m; 
 
     //gradient application
     //using 41 points mapped to diamond
     //ring size in this example is 17*17
-
     vec3 x = 2.0 * fract(permute_result * triangleGridValues.www) - 1.0; 
     vec3 h = abs(x) - 0.5; 
     vec3 ox = floor(x + 0.5);
@@ -72,12 +75,15 @@ float simplexNoise(in vec2 compLoc) {
     g.x = a0.x * corner_0.x + h.x * corner_0.y; 
     g.yz = a0.yz * vec2(corner_1.x, corner_2.x) + h.yz * vec2(corner_1.y, corner_2.y);
 
-    return 130.0 * dot(m,g);  
+    float raw = (130.0 * dot(m,g)) + 0.5; 
+    return raw; 
 }
 
 void main(){
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy); 
-    float color = simplexNoise(texelCoord);
+    float hsv_angle = simplexNoise(texelCoord); 
+    //angle, brightness, saturation
+    vec3 hsv = vec3(hsv_angle, 1.0, 1.0);
 
-    imageStore(outputImage, texelCoord, vec4(color, color, color, 1.0));
+    imageStore(outputImage, texelCoord, vec4(hsv, 1.0));
 }

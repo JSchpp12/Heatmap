@@ -166,11 +166,11 @@ std::unordered_map<star::Shader_Stage, star::StarShader> NoiseGrid::getShaders()
 	auto shaders = std::unordered_map<star::Shader_Stage, star::StarShader>();
 
 	//load vertex shader
-	std::string vertShaderPath = star::ConfigFile::getSetting(star::Config_Settings::mediadirectory) + "/shaders/default.vert";
+	std::string vertShaderPath = star::ConfigFile::getSetting(star::Config_Settings::mediadirectory) + "/shaders/hsvTextureDisplacement.vert";
 	shaders.insert(std::pair<star::Shader_Stage, star::StarShader>(star::Shader_Stage::vertex, star::StarShader(vertShaderPath, star::Shader_Stage::vertex)));
 
 	//load fragment shader
-	std::string fragShaderPath = star::ConfigFile::getSetting(star::Config_Settings::mediadirectory) + "/shaders/textureColor.frag";
+	std::string fragShaderPath = star::ConfigFile::getSetting(star::Config_Settings::mediadirectory) + "/shaders/hsvTextureDisplacement.frag";
 	shaders.insert(std::pair<star::Shader_Stage, star::StarShader>(star::Shader_Stage::fragment, star::StarShader(fragShaderPath, star::Shader_Stage::fragment)));
 
 	return shaders;

@@ -12,7 +12,7 @@ std::chrono::steady_clock::time_point Application::timeSinceLastUpdate = std::ch
 
 Application::Application(star::StarScene& scene) : StarApplication(scene)
 {
-    this->camera.setPosition(glm::vec3{ 0.0f, 0.3f, 3.0f });
+    this->camera.setPosition(glm::vec3{ 1.0f, 0.5f, 1.0f });
     auto camPosition = this->camera.getPosition();
     this->camera.setLookDirection(-camPosition);
 
@@ -40,8 +40,9 @@ Application::Application(star::StarScene& scene) : StarApplication(scene)
     //    this->scene.add(std::move(lion));
     //}
 
-    auto gridRef = this->scene.add(NoiseGrid::New(10)); 
+    auto gridRef = this->scene.add(NoiseGrid::New(100)); 
     this->grid = static_cast<NoiseGrid*>(&this->scene.getObject(gridRef)); 
+    //this->grid->setScale(glm::vec3{4.0, 4.0, 4.0});
     
     this->scene.add(std::unique_ptr<star::Light>(new Light(star::Type::Light::directional, glm::vec3{ 10,10,10 })));
 }
@@ -86,17 +87,26 @@ void Application::onScroll(double xoffset, double yoffset)
 
 void Application::onWorldUpdate()
 {
+    double timeChange = time.timeElapsedLastFrameSeconds(); 
     int valueChange = 0;
 
     if (star::KeyStates::state(star::KEY::X)) {
         std::cout << "Updating X of noise function resolution" << std::endl;
         this->targetX = true;
         this->targetY = false;
+        this->targetP = false; 
     }
     else if (star::KeyStates::state(star::KEY::Y)) {
         std::cout << "Updating Y of noise function resolution" << std::endl;
         this->targetX = false;
         this->targetY = true;
+        this->targetP = false; 
+    }
+    else if (star::KeyStates::state(star::KEY::P)) {
+        std::cout << "Permute" << std::endl; 
+        this->targetX = false; 
+        this->targetY = false; 
+        this->targetP = true; 
     }
 
     if (star::KeyStates::state(star::KEY::UP)) {
@@ -110,13 +120,21 @@ void Application::onWorldUpdate()
         if (valueChange != 0)
             std::cout << this->grid->noiseComputeValues->noiseImageResolution.x << std::endl;
 
-        this->grid->noiseComputeValues->noiseImageResolution.x += valueChange;
+        this->grid->noiseComputeValues->noiseImageResolution.x += (valueChange) ;
  
     }
     else if (this->targetY) {
         if (valueChange != 0)
             std::cout << this->grid->noiseComputeValues->noiseImageResolution.y << std::endl;
 
-        this->grid->noiseComputeValues->noiseImageResolution.y += valueChange;
+        this->grid->noiseComputeValues->noiseImageResolution.y += (valueChange);
     }
+    else if (this->targetP) {
+        if (valueChange != 0)
+            std::cout << this->grid->noiseComputeValues->permute << std::endl;
+
+        this->grid->noiseComputeValues->permute += (valueChange) * (acceleration * timeChange); 
+    }
+
+    time.updateLastFrameTime(); 
 }

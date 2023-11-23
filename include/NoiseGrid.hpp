@@ -6,6 +6,7 @@
 #include "StarDescriptors.hpp"
 #include "StarCommandBuffer.hpp"
 #include "ConfigFile.hpp"
+#include "Time.hpp"
 
 #include <memory>
 #include <vector>
@@ -13,7 +14,9 @@
 class NoiseGrid : public star::Grid {
 public:
 	struct ComputeInfo {
-		glm::vec2 noiseImageResolution = glm::vec2(320, 320); 
+		glm::vec2 noiseImageResolution = glm::vec2(1000, 1000); 
+		float scale = 0.5f;
+		float permute = 32.8f; 
 	}; 
 
 	ComputeInfo* noiseComputeValues = nullptr; 

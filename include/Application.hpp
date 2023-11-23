@@ -44,6 +44,8 @@ public:
 protected:
 
 private:
+    //const double 
+    const float acceleration = 0.00015f; 
     const int gridBaseHeight = 100, gridBaseWidth = 100;
     const int sunSpeed = 50;
     const float spotSpeed = 2;
@@ -53,10 +55,11 @@ private:
     star::Light* spot = nullptr;
 
     NoiseGrid* grid = nullptr; 
+    star::Time time; 
 
     bool targetX = false; 
     bool targetY = false; 
-
+    bool targetP = false; 
 
     static int disabledLightCounter;
     static bool upCounter;
