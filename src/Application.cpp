@@ -12,7 +12,15 @@ std::chrono::steady_clock::time_point Application::timeSinceLastUpdate = std::ch
 
 Application::Application(star::StarScene& scene) : StarApplication(scene)
 {
-    this->camera.setPosition(glm::vec3{ 1.0f, 0.5f, 1.0f });
+
+    std::cout << "Controls:" << std::endl; 
+    std::cout << "P - Set modification to permute value of the noise function" << std::endl; 
+    std::cout << "X - Set modification to X dimension on the noise function" << std::endl; 
+    std::cout << "Y - Set modification to Y dimension on the noise function" << std::endl; 
+    std::cout << "UP Arrow - Increase targeted modification value" << std::endl; 
+    std::cout << "DOWN Arrow - Decrease targeted modification value" << std::endl; 
+
+    this->camera.setPosition(glm::vec3{ 2.0f, 1.0f, 1.0f });
     auto camPosition = this->camera.getPosition();
     this->camera.setLookDirection(-camPosition);
 
@@ -42,7 +50,8 @@ Application::Application(star::StarScene& scene) : StarApplication(scene)
 
     auto gridRef = this->scene.add(NoiseGrid::New(100)); 
     this->grid = static_cast<NoiseGrid*>(&this->scene.getObject(gridRef)); 
-    //this->grid->setScale(glm::vec3{4.0, 4.0, 4.0});
+    this->grid->setScale(glm::vec3{2.0, 2.0, 2.0});
+    this->grid->moveRelative(glm::vec3{ -1.0f, 0.0, -1.0f });
     
     this->scene.add(std::unique_ptr<star::Light>(new Light(star::Type::Light::directional, glm::vec3{ 10,10,10 })));
 }
