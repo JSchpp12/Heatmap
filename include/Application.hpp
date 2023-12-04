@@ -15,7 +15,6 @@
 #include "Key.hpp"
 #include "BasicObject.hpp"
 #include "Square.hpp"
-#include "SimplexNoiseComputeRenderer.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -39,7 +38,7 @@ public:
 
     void onKeyPress(int key, int scancode, int mods) override;
 
-    std::unique_ptr<star::SwapChainRenderer> getMainRenderer(star::StarDevice& device, star::StarWindow& window, star::RenderOptions& options) override; 
+    //std::unique_ptr<star::SwapChainRenderer> getMainRenderer(star::StarDevice& device, star::StarWindow& window, star::RenderOptions& options) override; 
 
 protected:
 

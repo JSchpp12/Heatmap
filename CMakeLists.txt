@@ -15,13 +15,11 @@ set(${PROJECT_NAME}_SOURCE
 	"src/main.cpp"
 	"src/Application.cpp"
 	"src/NoiseGrid.cpp"
-	"src/SimplexNoiseComputeRenderer.cpp"
 	"src/DisplacementTextureMaterial.cpp"
 )
 
 set(${PROJECT_NAME}_HEADERS 
 	"include/NoiseGrid.hpp"
-	"include/SimplexNoiseComputeRenderer.hpp"
 )
 
 add_executable(${PROJECT_NAME} "${${PROJECT_NAME}_SOURCE};${${PROJECT_NAME}_HEADERS}")

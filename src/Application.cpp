@@ -26,28 +26,6 @@ Application::Application(star::StarScene& scene) : StarApplication(scene)
 
     auto mediaDirectoryPath = star::ConfigFile::getSetting(star::Config_Settings::mediadirectory);
 
-    //load plant
-    //{
-    //    auto plantPath = mediaDirectoryPath + "models/aloevera/aloevera.obj";
-
-    //    auto plant = BasicObject::New(plantPath);
-    //    plant->setPosition(glm::vec3(0.5f, 0.0, 0.0));
-    //    this->scene.add(std::move(plant));
-    //}
-
-    ////load lion
-    //{
-    //    auto lionPath = mediaDirectoryPath + "models/lion-statue/source/rapid.obj";
-    //    auto materialsPath = mediaDirectoryPath + "models/lion-statue/source";
-
-    //    auto lion = BasicObject::New(lionPath);
-    //    lion->setScale(glm::vec3{ 0.04f, 0.04f, 0.04f });
-    //    lion->setPosition(glm::vec3{ -0.5f , 0.0f, 0.0f });
-    //    lion->rotateGlobal(star::Type::Axis::x, -90);
-    //    lion->moveRelative(glm::vec3{ 0.0, -1.0, 0.0 });
-    //    this->scene.add(std::move(lion));
-    //}
-
     auto gridRef = this->scene.add(NoiseGrid::New(100)); 
     this->grid = static_cast<NoiseGrid*>(&this->scene.getObject(gridRef)); 
     this->grid->setScale(glm::vec3{2.0, 2.0, 2.0});
@@ -65,18 +43,18 @@ void Application::onKeyPress(int key, int scancode, int mods)
 
 }
 
-std::unique_ptr<star::SwapChainRenderer> Application::getMainRenderer(StarDevice& device, StarWindow& window, RenderOptions& options)
-{
-    std::vector<std::unique_ptr<Light>>& lightList = scene.getLights();
-    std::vector<std::reference_wrapper<StarObject>> prepObjects;
-    for (auto& obj : scene.getObjects()) {
-        prepObjects.push_back(*obj.second);
-    }
-
-    std::string computePath = std::string(star::ConfigFile::getSetting(star::Config_Settings::mediadirectory) + "/shaders/grid.comp");
-    return std::unique_ptr<SimplexNoiseComputeRenderer>(new SimplexNoiseComputeRenderer(this->gridBaseHeight, 
-        this->gridBaseWidth, window, lightList, prepObjects, camera, options, device));
-}
+//std::unique_ptr<star::SwapChainRenderer> Application::getMainRenderer(StarDevice& device, StarWindow& window, RenderOptions& options)
+//{
+//    std::vector<std::unique_ptr<Light>>& lightList = scene.getLights();
+//    std::vector<std::reference_wrapper<StarObject>> prepObjects;
+//    for (auto& obj : scene.getObjects()) {
+//        prepObjects.push_back(*obj.second);
+//    }
+//
+//    std::string computePath = std::string(star::ConfigFile::getSetting(star::Config_Settings::mediadirectory) + "/shaders/grid.comp");
+//    return std::unique_ptr<SimplexNoiseComputeRenderer>(new SimplexNoiseComputeRenderer(this->gridBaseHeight, 
+//        this->gridBaseWidth, window, lightList, prepObjects, camera, options, device));
+//}
 
 void Application::onKeyRelease(int key, int scancode, int mods)
 {
